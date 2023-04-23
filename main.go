@@ -14,29 +14,22 @@ import (
 )
 
 func main() {
-	const defaultCourse = "https://courses.ardanlabs.com/courses/take/ultimate-go-web-services-4-0"
-	u := flag.String("u", defaultCourse, "course URL")
+	u := flag.String("u", "https://courses.ardanlabs.com/courses/take/ultimate-go-web-services-4-0", "course URL")
+	d := flag.String("d", "media", "store path")
 	flag.Parse()
-
-	if *u == "" {
-		log.Println("Specify course URL.")
-		os.Exit(1)
-	}
 
 	if err := env.LoadVars(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 
-	if err := FetchMediaFromCourse(*u); err != nil {
+	if err := FetchMediaFromCourse(*u, *d); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
-func FetchMediaFromCourse(u string) error {
-	const mediaDir = "media"
-
+func FetchMediaFromCourse(u, d string) error {
 	course, err := parseCourse(u)
 	if err != nil {
 		return fmt.Errorf("parsing course: %w", err)
@@ -46,8 +39,8 @@ func FetchMediaFromCourse(u string) error {
 
 	log.Printf("%+v", *course)
 
-	if err := os.MkdirAll(path.Join(mediaDir, course.Title), 0666); err != nil {
-		return fmt.Errorf("creating media dir: %w", err)
+	if err := os.MkdirAll(path.Join(d, course.Title), 0666); err != nil {
+		return fmt.Errorf("creating media d: %w", err)
 	}
 
 	for _, lesson := range course.Lessons {
@@ -78,7 +71,7 @@ func FetchMediaFromCourse(u string) error {
 			return fmt.Errorf("processing lesson %+v: %w", lesson, err)
 		}
 
-		dst := path.Join(mediaDir, course.Title, lesson.Title+".mp4")
+		dst := path.Join(d, course.Title, lesson.Title+".mp4")
 		if err := saveFile(media, dst); err != nil {
 			return fmt.Errorf("saving lesson %+v to path %v: %w", lesson, dst, err)
 		}
