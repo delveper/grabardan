@@ -14,7 +14,8 @@ import (
 )
 
 func main() {
-	u := flag.String("u", "", "course URL")
+	const defaultCourse = "https://courses.ardanlabs.com/courses/take/ultimate-go-web-services-4-0"
+	u := flag.String("u", defaultCourse, "course URL")
 	flag.Parse()
 
 	if *u == "" {
@@ -49,48 +50,40 @@ func FetchMediaFromCourse(u string) error {
 		return fmt.Errorf("creating media dir: %w", err)
 	}
 
-	for _, chapter := range course.Chapters {
-		log.Printf("Processing chapter: %v\n", chapter.Title)
+	for _, lesson := range course.Lessons {
+		lesson.Title = strings.Replace(lesson.Title, ":", " -", -1)
 
-		chapter.Title = strings.Replace(chapter.Title, ":", " -", -1)
-		if err := os.MkdirAll(path.Join(mediaDir, course.Title, chapter.Title), 0666); err != nil {
-			return fmt.Errorf("creating media subdir: %w", err)
+		log.Printf("Processign lesson: %+v", lesson)
+
+		if lesson.Slug == "" {
+			log.Printf("Skipping lesson due empty slug: %+v", lesson)
+			continue
 		}
 
-		for _, lesson := range chapter.Lessons {
-			lesson.Title = strings.Replace(lesson.Title, ":", " -", -1)
-
-			log.Printf("Processign lesson: %+v", lesson)
-
-			if lesson.Slug == "" {
-				log.Printf("Skipping lesson due empty slug: %+v", lesson)
-				continue
-			}
-
-			asset, err := getBestAsset(path.Clean(path.Join("https://", hostURL, lesson.Slug)))
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Printf("Timeout: %s\n", u)
-				continue
-			}
-
-			if err != nil {
-				return fmt.Errorf("getting best asset: %w", err)
-			}
-
-			log.Printf("Best asset is: %+v\n", asset)
-
-			media, err := downloadFile(asset.URL)
-			if err != nil {
-				return fmt.Errorf("processing lesson %+v: %w", lesson, err)
-			}
-
-			dst := path.Join(mediaDir, course.Title, chapter.Title, lesson.Title+".mp4")
-			if err := saveFile(media, dst); err != nil {
-				return fmt.Errorf("saving file from lesson %+v to path %v: %w", lesson, dst, err)
-			}
-
-			log.Println(" - Success")
+		p := path.Clean(path.Join("https://", host, lesson.Slug))
+		asset, err := getBestAsset(p)
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Printf("Timeout: %s\n", u)
+			continue
 		}
+
+		if err != nil {
+			return fmt.Errorf("getting best asset: %w", err)
+		}
+
+		log.Printf("Best asset is: %+v\n", asset)
+
+		media, err := downloadFile(asset.URL)
+		if err != nil {
+			return fmt.Errorf("processing lesson %+v: %w", lesson, err)
+		}
+
+		dst := path.Join(mediaDir, course.Title, lesson.Title+".mp4")
+		if err := saveFile(media, dst); err != nil {
+			return fmt.Errorf("saving lesson %+v to path %v: %w", lesson, dst, err)
+		}
+
+		log.Println(" - Success")
 	}
 
 	return nil

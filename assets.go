@@ -95,7 +95,7 @@ func setCookie(token Token) chromedp.Action {
 		exp := cdp.TimeSinceEpoch(token.Expires)
 		if err := network.SetCookie("remember_user_token", token.Value).
 			WithExpires(&exp).
-			WithDomain(hostURL).
+			WithDomain(host).
 			WithPath("/").
 			WithHTTPOnly(true).
 			WithURL("").

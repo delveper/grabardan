@@ -11,21 +11,16 @@ import (
 	"github.com/delveper/gostruct"
 )
 
-const hostURL = "courses.ardanlabs.com"
+const host = "courses.ardanlabs.com"
 
 type Course struct {
-	Slug     string    `json:"slug" xpath:"-"`
-	Title    string    `json:"title" xpath:"//h1[contains(@class, 'course-progress__title')]"`
-	Chapters []Chapter `json:"chapters" xpath:"//div[contains(@class, 'chapter-item__container')][..]"`
-	Date     time.Time `json:"date" xpath:"-"`
+	Slug    string    `xpath:"-"`
+	Title   string    `xpath:"//h1[contains(@class, 'course-progress__title')]"`
+	Lessons []Lesson  `xpath:"//li[@data-qa='content-item'][..]"`
+	Date    time.Time `xpath:"-"`
 }
 
-type Chapter struct {
-	Title   string `json:"title" xpath:"//div[contains(@class, 'chapter-item__container')]//h2[contains(@class, 'chapter-item__title')]"`
-	Lessons []Item `json:"lessons" xpath:"//ul[contains(@class, 'chapter-item__contents')][..]//li[@data-qa='content-item'][..]"`
-}
-
-type Item struct {
+type Lesson struct {
 	Slug  string `json:"slug" xpath:"//a[contains(@class, 'content-item__link')]/@href"`
 	Title string `json:"title" xpath:"//div[contains(@class, 'content-item__title')]/text()"`
 }
@@ -53,27 +48,9 @@ func parseCourse(u string) (*Course, error) {
 	course.Slug = u
 	course.Date = time.Now()
 
-	const (
-		chapterSel       = "//div[contains(@class, 'chapter-item__container')]"
-		chapterLessonSel = "//ul[contains(@class, 'chapter-item__contents')]"
-		lessonSel        = "//li[@data-qa='content-item']"
-	)
-
-	course.Chapters, err = gostruct.MakeManyFromHTMLNode[Chapter](doc, chapterSel, "xpath")
+	course.Lessons, err = gostruct.MakeManyFromHTMLNode[Lesson](doc, "//li[@data-qa='content-item']", "xpath")
 	if err != nil {
-		return nil, fmt.Errorf("parsing chapters: %w", err)
-	}
-
-	for i, node := range htmlquery.Find(doc, "//div[contains(@class, 'chapter-item__container')]//h2[contains(@class, 'chapter-item__title')]") {
-		course.Chapters[i].Title = htmlquery.InnerText(node)
-	}
-
-	for i := range course.Chapters {
-		course.Chapters[i].Lessons, err = gostruct.MakeManyFromHTMLNode[Item](doc, lessonSel, "xpath")
-		if err != nil {
-			return nil, fmt.Errorf("parsing lessons: %w", err)
-		}
-
+		return nil, fmt.Errorf("parsing lessons: %w", err)
 	}
 
 	return &course, nil
