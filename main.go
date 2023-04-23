@@ -58,7 +58,7 @@ func FetchMediaFromCourse(u string) error {
 				continue
 			}
 
-			asset, err := getBestAsset(path.Clean(path.Join(hostURL, lesson.Slug)))
+			asset, err := getBestAsset(path.Clean(path.Join("https://", hostURL, lesson.Slug)))
 			if errors.Is(err, context.DeadlineExceeded) {
 				log.Printf("Timeout: %s\n", u)
 				continue

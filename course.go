@@ -11,7 +11,7 @@ import (
 	"github.com/delveper/gostruct"
 )
 
-const hostURL = "https://courses.ardanlabs.com"
+const hostURL = "courses.ardanlabs.com"
 
 type Course struct {
 	Slug     string    `json:"slug" xpath:"-"`
