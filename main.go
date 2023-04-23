@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -13,12 +14,20 @@ import (
 )
 
 func main() {
+	u := flag.String("url", "", "course URL")
+	flag.Parse()
+
+	if *u == "" {
+		log.Println("Specify course URL.")
+		os.Exit(1)
+	}
+
 	if err := env.LoadVars(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 
-	if err := FetchMediaFromCourse("https://courses.ardanlabs.com/courses/take/ultimate-go-web-services-4-0/"); err != nil {
+	if err := FetchMediaFromCourse(*u); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
