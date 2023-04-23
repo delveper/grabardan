@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	u := flag.String("url", "", "course URL")
+	u := flag.String("u", "", "course URL")
 	flag.Parse()
 
 	if *u == "" {
